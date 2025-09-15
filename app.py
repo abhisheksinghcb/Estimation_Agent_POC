@@ -7,7 +7,18 @@ from typing import TypedDict, List
 from langgraph.graph import StateGraph, END
 
 load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+# Handle both .env file and Streamlit secrets
+try:
+    OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+except:
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+if not OPENAI_API_KEY:
+    st.error(
+        "⚠️ OpenAI API key not found. Please set OPENAI_API_KEY in your environment variables or Streamlit secrets."
+    )
+    st.stop()
 
 
 class AgentState(TypedDict):
@@ -18,7 +29,7 @@ class AgentState(TypedDict):
     estimate: str
 
 
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.4, openai_api_key=OPENAI_API_KEY)
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.4, api_key=OPENAI_API_KEY)
 
 clarifier_prompt = ChatPromptTemplate.from_template(
     """
@@ -184,7 +195,7 @@ graph.add_conditional_edges(
     {"clarifier_agent": "clarifier_agent", "estimator_agent": "estimator_agent"},
 )
 graph.add_edge("estimator_agent", END)
-app_graph = graph.compile(debug=True)
+app_graph = graph.compile()
 
 
 st.title("Project Estimator Agent")
