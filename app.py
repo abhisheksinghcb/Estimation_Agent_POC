@@ -209,6 +209,10 @@ if "state" not in st.session_state:
         "estimate": "",
     }
 
+# Initialize loading state
+if "is_processing" not in st.session_state:
+    st.session_state.is_processing = False
+
 if st.session_state.state["idea"]:
     st.caption(f"Project Idea: {st.session_state.state['idea']}")
 
@@ -217,16 +221,36 @@ if not st.session_state.state["idea"]:
         "Enter your project idea:",
         height="content",
         placeholder="e.g. 'I want to build a web application that allows users to manage their finances'",
+        disabled=st.session_state.is_processing,
     )
-    if st.button("Get Estimation") and idea:
+
+    # Show processing state
+    if st.session_state.is_processing:
+        with st.spinner("Analyzing your project..."):
+            st.empty()  # Placeholder to keep spinner visible
+
+    button_disabled = st.session_state.is_processing
+    if st.button("Get Estimation", disabled=button_disabled) and idea:
+        st.session_state.is_processing = True
         st.session_state.state["idea"] = idea
+        st.rerun()
+
+# Process the initial request after the idea is set
+if (
+    st.session_state.is_processing
+    and st.session_state.state["idea"]
+    and not st.session_state.state["questions"]
+    and not st.session_state.state["estimate"]
+):
+    with st.spinner("Analyzing your project..."):
         for update in app_graph.stream(st.session_state.state):
             st.session_state.state = merge_state(st.session_state.state, update)
             if st.session_state.state["questions"] and len(
                 st.session_state.state["questions"]
             ) > len(st.session_state.state["answers"]):
                 break
-        st.rerun()
+    st.session_state.is_processing = False
+    st.rerun()
 
 for q, a in zip(st.session_state.state["questions"], st.session_state.state["answers"]):
     st.write(f"**Q:** {q}")
@@ -240,11 +264,32 @@ if (
 ):
     pending_q = st.session_state.state["questions"][-1]
     st.info(f"{pending_q}")
+
+    # Show processing state for follow-up questions
+    if st.session_state.is_processing:
+        with st.spinner("Processing your response..."):
+            st.empty()  # Placeholder to keep spinner visible
+
     user_answer = st.text_input(
-        "Your answer:", key=f"answer_{len(st.session_state.state['answers'])}"
+        "Your answer:",
+        key=f"answer_{len(st.session_state.state['answers'])}",
+        disabled=st.session_state.is_processing,
     )
-    if st.button("Submit Answer") and user_answer:
+
+    answer_button_disabled = st.session_state.is_processing
+    if st.button("Submit Answer", disabled=answer_button_disabled) and user_answer:
+        st.session_state.is_processing = True
         st.session_state.state["answers"].append(user_answer)
+        st.rerun()
+
+# Process follow-up answer after rerun to show loading state
+if (
+    st.session_state.is_processing
+    and st.session_state.state["questions"]
+    and len(st.session_state.state["answers"])
+    == len(st.session_state.state["questions"])
+):
+    with st.spinner("Processing your response..."):
         for update in app_graph.stream(st.session_state.state):
             st.session_state.state = merge_state(st.session_state.state, update)
             if (
@@ -253,13 +298,14 @@ if (
                 > len(st.session_state.state["answers"])
             ) or st.session_state.state["estimate"]:
                 break
-        st.rerun()
+    st.session_state.is_processing = False
+    st.rerun()
 
 
 if st.session_state.state["estimate"]:
     st.success(st.session_state.state["estimate"])
 
-if st.button("Reset"):
+if st.button("Reset", disabled=st.session_state.is_processing):
     st.session_state.state = {
         "idea": "",
         "questions": [],
@@ -267,4 +313,5 @@ if st.button("Reset"):
         "finalized": False,
         "estimate": "",
     }
+    st.session_state.is_processing = False
     st.rerun()
