@@ -476,7 +476,7 @@ if (
     and st.session_state.conversation_state["current_user_message"]
 ):
 
-    with st.spinner("Processing your request..."):
+    with st.spinner("Thinking..."):
         try:
             for update in app_graph.stream(st.session_state.conversation_state):
                 st.session_state.conversation_state = merge_state(
