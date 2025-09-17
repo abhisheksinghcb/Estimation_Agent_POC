@@ -498,11 +498,11 @@ if (
     st.rerun()
 
 if st.session_state.conversation_state.get("final_estimate"):
+    print(st.session_state.conversation_state)
     st.success("🎉 **Project Estimate Complete!**")
     with st.expander("📊 **View Complete Project Estimate**", expanded=True):
         st.markdown(st.session_state.conversation_state["final_estimate"])
 
-print(st.session_state.conversation_state)
 if st.button("🗑️ Reset Conversation", disabled=st.session_state.is_processing):
     st.session_state.conversation_state = create_conversation_state()
     st.session_state.is_processing = False
