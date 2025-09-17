@@ -1,5 +1,5 @@
-streamlit>=1.28.0
-langchain-openai>=0.1.0
-langchain>=0.1.0
-langgraph>=0.1.0
-python-dotenv>=1.0.0
+streamlit
+python-dotenv
+langchain-openai
+langchain
+langgraph
